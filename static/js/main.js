@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let barChartInstance = null;
     let ganttInstances = {}; // Map of scheduler name to ApexCharts instance
+    let currentSimulationData = null; // Store latest results for report generation
 
     // Tabs logic delegated to dynamic creation in renderGanttCharts
 
@@ -53,6 +54,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function processAndRenderAll(data) {
+        currentSimulationData = data;
+        
         // Find best algorithm based on Turnaround Time
         let best = data.reduce((prev, curr) => (prev.avg_turnaround_time < curr.avg_turnaround_time) ? prev : curr);
         kpiBestAlgo.textContent = best.scheduler_name;
@@ -263,8 +266,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     borderColor: '#27272a'
                 },
                 legend: {
-                    position: 'top',
-                    horizontalAlign: 'left',
+                    position: 'bottom',
+                    horizontalAlign: 'center',
                     labels: { colors: '#fafafa', fontFamily: 'Plus Jakarta Sans' },
                     markers: { radius: 4 }
                 },
@@ -294,6 +297,80 @@ document.addEventListener('DOMContentLoaded', () => {
             const chart = new ApexCharts(document.querySelector(`#${chartDivId}`), options);
             chart.render();
             ganttInstances[sched.scheduler_name] = chart;
+        });
+    }
+
+    // Report Generation Logic
+    const downloadReportBtn = document.getElementById('downloadReportBtn');
+    if (downloadReportBtn) {
+        downloadReportBtn.addEventListener('click', () => {
+            if (!currentSimulationData || currentSimulationData.length === 0) {
+                alert('Please execute a simulation first to generate a report.');
+                return;
+            }
+            
+            let report = "========================================================================\n";
+            report += "                  NEXUS OS - CPU SIMULATION REPORT                    \n";
+            report += "========================================================================\n\n";
+            
+            report += "--- ABOUT THIS REPORT ---\n";
+            report += "This document provides a detailed breakdown of how different CPU scheduling\n";
+            report += "algorithms (Heuristics) handled the exact same queue of system processes.\n\n";
+            report += "TERMINOLOGY:\n";
+            report += "- Waiting Time: Total time a process spent idle in the ready queue.\n";
+            report += "- Turnaround Time: Total time taken from process arrival to final completion.\n";
+            report += "- Burst Time: The actual amount of CPU processing time consumed.\n\n";
+            
+            // Calculate best
+            let best = currentSimulationData.reduce((prev, curr) => (prev.avg_turnaround_time < curr.avg_turnaround_time) ? prev : curr);
+            
+            report += "========================================================================\n";
+            report += "                         KEY TAKEAWAYS                                \n";
+            report += "========================================================================\n";
+            report += `The most efficient algorithm for this workload was: **${best.scheduler_name}**.\n`;
+            report += "Lower wait and turnaround times indicate better system responsiveness.\n\n";
+            
+            report += "PERFORMANCE SUMMARY (All Algorithms):\n";
+            report += "------------------------------------------------------------------------\n";
+            currentSimulationData.forEach(sched => {
+                report += `[ ${sched.scheduler_name} ]\n`;
+                report += `  -> Average Waiting Time:     ${sched.avg_waiting_time.toFixed(2)} units\n`;
+                report += `  -> Average Turnaround Time:  ${sched.avg_turnaround_time.toFixed(2)} units\n\n`;
+            });
+            
+            report += "========================================================================\n";
+            report += "                   DETAILED PROCESS LOGS (Timeline)                     \n";
+            report += "========================================================================\n";
+            report += "Below is the exact chronological sequence of CPU execution for each algorithm.\n";
+            
+            currentSimulationData.forEach(sched => {
+                report += `\n########################################################################\n`;
+                report += `  ALGORITHM: ${sched.scheduler_name}\n`;
+                report += `########################################################################\n`;
+                
+                // Add column headers with exact spacing
+                report += `| ${"Time".padEnd(8)} | ${"PID".padEnd(10)} | ${"Burst Time".padEnd(12)} | ${"Accumulated Wait".padEnd(18)} |\n`;
+                report += `|----------|------------|--------------|--------------------|\n`;
+                
+                sched.logs.forEach(log => {
+                    let timeStr = `T+${log.time}`.padEnd(8);
+                    let pidStr = `Process ${log.pid}`.padEnd(10);
+                    let burstStr = `${log.burst_time} units`.padEnd(12);
+                    let waitStr = `${log.waiting_time} units`.padEnd(18);
+                    
+                    report += `| ${timeStr} | ${pidStr} | ${burstStr} | ${waitStr} |\n`;
+                });
+            });
+            
+            const blob = new Blob([report], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `nexus_os_simulation_report_${new Date().getTime()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         });
     }
 });
