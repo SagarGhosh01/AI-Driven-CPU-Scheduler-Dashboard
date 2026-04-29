@@ -1,3 +1,9 @@
+// ============================================================================
+// SIMULATOR IMPLEMENTATION
+// ============================================================================
+// Implements CPU scheduling algorithms and real-world process data gathering
+// ============================================================================
+
 #include "simulator.h"
 #include <iostream>
 #include <algorithm>
@@ -5,59 +11,139 @@
 #include <psapi.h>
 #include <map>
 
+// ============================================================================
+// PROCESS CONSTRUCTOR
+// ============================================================================
+// Initialize process with PID and burst history
 Process::Process(int p, vector<int> b) {
     pid = p;
     bursts = b;
-    current_burst_index = 0;
+    current_burst_index = 0;     // Start with first burst
     arrival_time = 0;
-    exp_predicted_burst = 10.0;
-    last_exp_burst_idx = -1;
+    exp_predicted_burst = 10.0;  // Initial exponential smoothing guess
+    last_exp_burst_idx = -1;     // Not yet updated
 }
 
+// ============================================================================
+// GET NEXT ACTUAL BURST
+// ============================================================================
+// Returns the CPU time required for the current burst (if not finished)
+// Used by schedulers that have perfect knowledge (ideal algorithms)
 int Process::get_next_actual_burst() const {
+    // === CHECK IF PROCESS FINISHED ===
+    // If current_burst_index >= bursts.size(), all bursts done
     if (current_burst_index < bursts.size()) return bursts[current_burst_index];
+    
+    // === PROCESS FINISHED ===
     return 0;
 }
 
+// ============================================================================
+// GET CURRENT AI PREDICTION
+// ============================================================================
+// Custom Linear Regression prediction implemented natively in C++
+// Predicts next burst using history of last 3 bursts
+//
+// ALGORITHM: Simple Linear Regression
+// Fits a line through past burst times and extrapolates
+//
+// FORMULA:
+// Given points (0, burst[i-n+1]), (1, burst[i-n+2]), ..., (n-1, burst[i])
+// Fit line: y = mx + c
+// Predict: y_pred = m*n + c (next time point)
+//
+// IMPLEMENTATION:
+// - Use least squares to find best-fit line
+// - m = (n*Σxy - Σx*Σy) / (n*Σx² - (Σx)²)
+// - c = (Σy - m*Σx) / n
+// ============================================================================
 double Process::get_current_ai_prediction() const {
-    // Custom Linear Regression ML Prediction natively in C++!
+    // === HANDLE FIRST BURST ===
+    // No history yet, return default guess
     if (current_burst_index == 0) return 10.0;
+    
+    // === HANDLE SECOND BURST ===
+    // Only one history point, use it directly
     if (current_burst_index == 1) return bursts[0];
     
-    // Train on last 3 bursts
+    // === USE REGRESSION ON LAST 3 BURSTS ===
     int history_window = 3;
     int n = min((int)current_burst_index, history_window);
+    
+    // Calculate summations needed for linear regression
     double sum_x = 0, sum_y = 0, sum_xy = 0, sum_xx = 0;
     
+    // Iterate through last n bursts with time points 0, 1, 2, ...
     for (int i = 0; i < n; i++) {
         int idx = current_burst_index - n + i;
-        sum_x += i;
-        sum_y += bursts[idx];
-        sum_xy += i * bursts[idx];
-        sum_xx += i * i;
+        sum_x += i;                    // Σx = 0 + 1 + 2 + ...
+        sum_y += bursts[idx];          // Σy = burst values
+        sum_xy += i * bursts[idx];     // Σxy = time * burst
+        sum_xx += i * i;               // Σx² = 0² + 1² + 2² + ...
     }
     
+    // === CALCULATE SLOPE (m) AND INTERCEPT (c) ===
     double denominator = (n * sum_xx - sum_x * sum_x);
-    if (denominator == 0) return bursts[current_burst_index - 1]; // fallback if no variance
     
-    double m = (n * sum_xy - sum_x * sum_y) / denominator;
-    double c = (sum_y - m * sum_x) / n;
+    // === HANDLE NO VARIANCE CASE ===
+    // If all bursts are identical, denominator = 0
+    // Fall back to previous burst value
+    if (denominator == 0) return bursts[current_burst_index - 1];
     
+    // === CALCULATE LINEAR REGRESSION COEFFICIENTS ===
+    double m = (n * sum_xy - sum_x * sum_y) / denominator;  // slope
+    double c = (sum_y - m * sum_x) / n;                      // intercept
+    
+    // === PREDICT NEXT VALUE ===
+    // At time point n, predict: y = m*n + c
     double prediction = m * n + c;
+    
+    // === ENSURE POSITIVE PREDICTION ===
+    // Burst time can't be negative, ensure minimum of 1.0
     return max(1.0, prediction);
 }
 
+// ============================================================================
+// IS FINISHED
+// ============================================================================
+// Checks if process has completed all bursts
 bool Process::is_finished() const {
     return current_burst_index >= bursts.size();
 }
 
-int Process::complete_current_burst(int current_time, int waiting_time) {
+// ============================================================================
+// COMPLETE CURRENT BURST
+// ============================================================================
+// Records execution metrics for current burst and advances to next
+void Process::complete_current_burst(int current_time, int waiting_time) {
+    // === GET BURST TIME ===
+    // How long the current burst actually took
     int burst_time = bursts[current_burst_index];
+    
+    // === RECORD WAITING TIME ===
+    // How long process waited in ready queue before this burst
     waiting_times.push_back(waiting_time);
+    
+    // === RECORD TURNAROUND TIME ===
+    // Turnaround = waiting time + execution time
     turnaround_times.push_back(waiting_time + burst_time);
+    
+    // === ADVANCE TO NEXT BURST ===
+    // Move index forward so next burst is ready when scheduled again
     current_burst_index++;
+    
+    // === RETURN BURST TIME ===
     return burst_time;
 }
+
+// [Additional scheduler classes FCFS, SJF, ExponentialSJF, AISJF follow...]
+// [Each implements virtual schedule() method from Scheduler interface]
+
+// ============================================================================
+// SIMULATOR ENGINE CLASS
+// ============================================================================
+// Orchestrates the simulation: manages ready queue, I/O queue, time, and
+// executes scheduler decisions
 
 class Scheduler {
 public:
