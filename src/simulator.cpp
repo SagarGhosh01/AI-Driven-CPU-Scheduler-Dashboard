@@ -59,7 +59,7 @@ int Process::get_next_actual_burst() const {
 // ============================================================================
 double Process::get_current_ai_prediction() const {
     // === HANDLE FIRST BURST ===
-    // No history yet, return default guess
+    // if No history yet, return default guess
     if (current_burst_index == 0) return 10.0;
     
     // === HANDLE SECOND BURST ===
@@ -74,12 +74,12 @@ double Process::get_current_ai_prediction() const {
     double sum_x = 0, sum_y = 0, sum_xy = 0, sum_xx = 0;
     
     // Iterate through last n bursts with time points 0, 1, 2, ...
-    for (int i = 0; i < n; i++) {
-        int idx = current_burst_index - n + i;
-        sum_x += i;                    // Σx = 0 + 1 + 2 + ...
+    for (int j = 0; j < n; j++) {
+        int idx = current_burst_index - n + j;
+        sum_x += j;                    // Σx = 0 + 1 + 2 + ...
         sum_y += bursts[idx];          // Σy = burst values
-        sum_xy += i * bursts[idx];     // Σxy = time * burst
-        sum_xx += i * i;               // Σx² = 0² + 1² + 2² + ...
+        sum_xy += j * bursts[idx];     // Σxy = time * burst
+        sum_xx += j * j;               // Σx² = 0² + 1² + 2² + ...
     }
     
     // === CALCULATE SLOPE (m) AND INTERCEPT (c) ===
