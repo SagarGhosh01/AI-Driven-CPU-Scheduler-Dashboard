@@ -16,8 +16,8 @@ TEST(ProcessGeneratorTest, CheckHistorySize) {
 
 TEST(ProcessGeneratorTest, IsSortedByArrivalTime) {
     auto processes = ProcessGenerator::generate(10, 5, ProcessGenerator::WorkloadType::IO_BOUND);
-    for (size_t i = 1; i < processes.size(); ++i) {
-        EXPECT_GE(processes[i].arrivalTime, processes[i-1].arrivalTime);
+    for (size_t j = 1; j < processes.size(); ++j) {
+        EXPECT_GE(processes[j].arrivalTime, processes[j-1].arrivalTime);
     }
 }
 
