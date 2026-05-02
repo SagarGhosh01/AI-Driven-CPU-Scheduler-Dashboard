@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function processAndRenderAll(data) {
         currentSimulationData = data;
         
-        // Find best algorithm based on Turnaround Time
+        // Find the best algorithm based on Turnaround Time
         let best = data.reduce((prev, curr) => (prev.avg_turnaround_time < curr.avg_turnaround_time) ? prev : curr);
         kpiBestAlgo.textContent = best.scheduler_name;
         kpiBestScore.textContent = `${best.avg_turnaround_time.toFixed(2)} units (avg TT)`;
@@ -146,9 +146,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         align: 'end'
                     },
                     tooltip: {
-                        backgroundColor: '#18181b',
+                        backgroundColor: '#1e1e22',
                         titleColor: '#fafafa',
-                        bodyColor: '#a1a1aa',
+                        bodyColor: '#a2a2ac',
                         borderColor: '#27272a',
                         borderWidth: 1,
                         padding: 12,
