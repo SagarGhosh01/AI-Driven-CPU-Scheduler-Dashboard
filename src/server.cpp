@@ -322,7 +322,9 @@ int main() {
     if (bind(listenSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
         cerr << "Bind failed." << endl;
         closesocket(listenSocket);
+#ifdef _WIN32
         WSACleanup();
+#endif
         return 1;
     }
 
@@ -331,7 +333,9 @@ int main() {
     if (listen(listenSocket, SOMAXCONN) == SOCKET_ERROR) {
         cerr << "Listen failed." << endl;
         closesocket(listenSocket);
+#ifdef _WIN32
         WSACleanup();
+#endif
         return 1;
     }
 
@@ -353,6 +357,8 @@ int main() {
 
     // === CLEANUP (UNREACHABLE IN INFINITE LOOP) ===
     closesocket(listenSocket);
+#ifdef _WIN32
     WSACleanup();
+#endif
     return 0;
 }
