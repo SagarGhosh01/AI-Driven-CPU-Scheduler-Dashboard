@@ -32,6 +32,10 @@ add_library(CoreLib STATIC ${CORE_SOURCES})
 target_include_directories(CoreLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(CoreLib PUBLIC Eigen3::Eigen)
 
+# Server Executable (doesn't need Qt6)
+add_executable(Server src/server.cpp src/simulator.cpp)
+target_include_directories(Server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 # We will add the main executable here later (Steps 6-10)
 # Find Qt6 components
 find_package(Qt6 COMPONENTS Widgets Charts REQUIRED)
@@ -53,10 +57,6 @@ set(GUI_SOURCES
 add_executable(SchedulerApp ${GUI_SOURCES})
 target_include_directories(SchedulerApp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(SchedulerApp PRIVATE CoreLib Qt6::Widgets Qt6::Charts)
-
-# Server Executable
-add_executable(Server src/server.cpp src/simulator.cpp)
-target_include_directories(Server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Add Tests directory
 add_subdirectory(tests)
