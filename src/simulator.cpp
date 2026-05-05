@@ -7,9 +7,15 @@
 #include "simulator.h"
 #include <iostream>
 #include <algorithm>
+#include <map>
+#include <random>
+#include <ctime>
+#include <thread>
+#include <chrono>
+#ifdef _WIN32
 #include <windows.h>
 #include <psapi.h>
-#include <map>
+#endif
 
 // ============================================================================
 // PROCESS CONSTRUCTOR
@@ -312,6 +318,7 @@ vector<SimulatorResult> run_all_simulators(const vector<Process>& processes) {
 }
 
 vector<Process> gather_real_process_data(int num_processes, int bursts_per_process) {
+#ifdef _WIN32
     DWORD aProcesses[1024], cbNeeded, cProcesses;
     if (!EnumProcesses(aProcesses, sizeof(aProcesses), &cbNeeded)) return {};
     cProcesses = cbNeeded / sizeof(DWORD);
@@ -358,4 +365,29 @@ vector<Process> gather_real_process_data(int num_processes, int bursts_per_proce
         }
     }
     return results;
+#else
+    std::mt19937 rng(static_cast<unsigned int>(std::time(nullptr)));
+    std::uniform_int_distribution<int> burst_dist(1, 100);
+    std::uniform_int_distribution<int> arrival_dist(0, 50);
+
+    vector<Process> results;
+    results.reserve(num_processes);
+    
+    for (int i = 0; i < num_processes; i++) {
+        vector<int> bursts;
+        bursts.reserve(bursts_per_process);
+        for (int j = 0; j < bursts_per_process; j++) {
+            bursts.push_back(burst_dist(rng));
+        }
+        Process p(i + 1, bursts);
+        p.arrival_time = arrival_dist(rng);
+        results.push_back(std::move(p));
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+
+    sort(results.begin(), results.end(), [](const Process& a, const Process& b) {
+        return a.arrival_time < b.arrival_time;
+    });
+    return results;
+#endif
 }

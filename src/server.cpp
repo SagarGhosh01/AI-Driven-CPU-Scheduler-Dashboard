@@ -22,13 +22,32 @@
 #include <fstream>
 #include <sstream>
 #include <cstdlib>
+#include <vector>
+#include <thread>
+#include <chrono>
+#include <cstring>
+#ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#else
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#endif
 #include "json.hpp"
 #include "simulator.h"
 
+#ifdef _WIN32
 // Link against Winsock2 library
 #pragma comment(lib, "Ws2_32.lib")
+#else
+using SOCKET = int;
+constexpr int INVALID_SOCKET = -1;
+constexpr int SOCKET_ERROR = -1;
+#define closesocket close
+#endif
 
 using namespace std;
 using json = nlohmann::json;
@@ -263,6 +282,7 @@ int main() {
         port = atoi(port_env);
     }
 
+#ifdef _WIN32
     // === INITIALIZE WINDOWS SOCKETS ===
     // MAKEWORD(2, 2): request Winsock version 2.2
     WSADATA wsaData;
@@ -270,17 +290,27 @@ int main() {
         cerr << "WSAStartup failed." << endl;
         return 1;
     }
+#endif
 
     // === CREATE LISTENING SOCKET ===
     // AF_INET: IPv4
     // SOCK_STREAM: TCP (connection-oriented)
-    // IPPROTO_TCP: TCP protocol
-    SOCKET listenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    SOCKET listenSocket =
+#ifdef _WIN32
+        socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+#else
+        socket(AF_INET, SOCK_STREAM, 0);
+#endif
     if (listenSocket == INVALID_SOCKET) {
         cerr << "Socket creation failed." << endl;
+#ifdef _WIN32
         WSACleanup();
+#endif
         return 1;
     }
+
+    int opt = 1;
+    setsockopt(listenSocket, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&opt), sizeof(opt));
 
     // === BIND SOCKET TO PORT ===
     // Bind to all interfaces (INADDR_ANY) on dynamic port from environment

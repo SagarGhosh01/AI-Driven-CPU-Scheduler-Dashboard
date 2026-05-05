@@ -13,7 +13,7 @@ COPY . .
 RUN rm -rf build && \
     mkdir build && \
     cd build && \
-    cmake .. && \
+    cmake -DBUILD_GUI=OFF .. && \
     make Server
 
 FROM ubuntu:24.04

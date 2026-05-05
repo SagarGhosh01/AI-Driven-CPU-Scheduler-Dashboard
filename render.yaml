@@ -1,16 +1,9 @@
 services:
   - type: web
     name: cpu-scheduler-backend
-    runtime: native
-    
-    buildCommand: |
-      rm -rf build && \
-      mkdir -p build && \
-      cd build && \
-      cmake .. && \
-      make Server
-    
-    startCommand: ./build/Server
+    env: docker
+    dockerfilePath: Dockerfile
+    startCommand: ./Server
     
     envVars:
       - key: PORT

@@ -23,6 +23,9 @@ AIPredictiveScheduler_IS_TOP_LEVEL:STATIC=ON
 //Value Computed by CMake
 AIPredictiveScheduler_SOURCE_DIR:STATIC=E:/CPU3/AI-Driven-CPU-Scheduler-Dashboard
 
+//No help, variable specified on the command line.
+BUILD_GUI:UNINITIALIZED=OFF
+
 //Value Computed by CMake.
 CMAKE_FIND_PACKAGE_REDIRECTS_DIR:STATIC=E:/CPU3/AI-Driven-CPU-Scheduler-Dashboard/build/CMakeFiles/pkgRedirects
 
