@@ -9,8 +9,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 COPY . .
 
-# Build natively for Linux
-RUN mkdir build && cd build && \
+# Clean and build natively for Linux
+RUN rm -rf build && \
+    mkdir build && \
+    cd build && \
     cmake .. && \
     make Server
 
