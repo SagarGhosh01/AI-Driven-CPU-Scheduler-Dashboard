@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "buildCommand": "mkdir -p public && cp -r templates/* public/ && cp -r static public/ && g++ -O3 -std=c++17 -pthread src/cli.cpp src/simulator.cpp -Iinclude -I. -o api/SimulatorCLI",
+  "outputDirectory": "public",
+  "functions": {
+    "api/**/*.js": {
+      "includeFiles": "api/SimulatorCLI",
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  },
+  "routes": [
+    {
+      "src": "/api/simulate",
+      "dest": "/api/simulate.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ]
+}
