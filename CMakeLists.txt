@@ -34,13 +34,13 @@ add_library(CoreLib STATIC ${CORE_SOURCES})
 target_include_directories(CoreLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(CoreLib PUBLIC Eigen3::Eigen)
 
-# Server Executable (doesn't need Qt6)
-add_executable(Server src/server.cpp src/simulator.cpp)
-target_include_directories(Server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR})
+# C++ CLI Simulator for Python wrapper
+add_executable(SimulatorCLI src/cli.cpp src/simulator.cpp)
+target_include_directories(SimulatorCLI PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
-target_link_libraries(Server PRIVATE Threads::Threads)
+target_link_libraries(SimulatorCLI PRIVATE Threads::Threads)
 
 # We will add the main executable here later (Steps 6-10)
 if(BUILD_GUI)

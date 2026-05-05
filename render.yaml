@@ -1,9 +1,9 @@
 services:
   - type: web
     name: cpu-scheduler-backend
-    env: docker
-    dockerfilePath: Dockerfile
-    startCommand: ./Server
+    env: python
+    buildCommand: "cmake -DBUILD_GUI=OFF . && make SimulatorCLI && pip install -r requirements.txt"
+    startCommand: "gunicorn app:app"
     
     envVars:
       - key: PORT
