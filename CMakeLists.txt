@@ -54,5 +54,9 @@ add_executable(SchedulerApp ${GUI_SOURCES})
 target_include_directories(SchedulerApp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(SchedulerApp PRIVATE CoreLib Qt6::Widgets Qt6::Charts)
 
+# Server Executable
+add_executable(Server src/server.cpp src/simulator.cpp)
+target_include_directories(Server PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
 # Add Tests directory
 add_subdirectory(tests)

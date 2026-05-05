@@ -21,6 +21,7 @@
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <cstdlib>
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include "json.hpp"
@@ -254,6 +255,14 @@ void handle_client(SOCKET clientSocket) {
 // Initializes Windows Sockets and starts listening for HTTP requests
 // ============================================================================
 int main() {
+    // === GET PORT FROM ENVIRONMENT VARIABLE ===
+    // Default to 5000 if PORT env var not set (for local development)
+    int port = 5000;
+    const char* port_env = getenv("PORT");
+    if (port_env) {
+        port = atoi(port_env);
+    }
+
     // === INITIALIZE WINDOWS SOCKETS ===
     // MAKEWORD(2, 2): request Winsock version 2.2
     WSADATA wsaData;
@@ -274,11 +283,11 @@ int main() {
     }
 
     // === BIND SOCKET TO PORT ===
-    // Bind to all interfaces (INADDR_ANY) on port 5000
+    // Bind to all interfaces (INADDR_ANY) on dynamic port from environment
     sockaddr_in serverAddr;
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_addr.s_addr = INADDR_ANY;        // Listen on all interfaces
-    serverAddr.sin_port = htons(5000);               // Port 5000
+    serverAddr.sin_port = htons(port);               // Port from environment or default 5000
 
     if (bind(listenSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR) {
         cerr << "Bind failed." << endl;
@@ -298,7 +307,7 @@ int main() {
 
     // === PRINT SERVER STARTUP MESSAGE ===
     cout << "Nexus OS Backend (C++) starting..." << endl;
-    cout << "Listening on http://127.0.0.1:5000" << endl;
+    cout << "Listening on http://0.0.0.0:" << port << endl;
 
     // === MAIN ACCEPT LOOP ===
     // Accept client connections in a loop (infinite)
